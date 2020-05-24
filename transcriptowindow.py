@@ -85,7 +85,8 @@ class MicrophoneStream(object):
         return None, pyaudio.paContinue
 
     def generator(self):
-        while not self.closed:
+        global tflag
+        while not self.closed and tflag == True:
             # Use a blocking get() to ensure there's at least one chunk of
             # data, and stop iteration if the chunk is None, indicating the
             # end of the audio stream.
@@ -154,12 +155,13 @@ def btn_clicked():
     root.attributes("-fullscreen", True)
     t1 = threading.Thread(target=work1)
     t1.start()
-    t1.setDaemon(True)
 
     def on_closing():
+        global tflag
+        tflag = False
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             root.destroy()
-            sys.exit()
+
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
 
@@ -220,6 +222,7 @@ def work1():
 if __name__ == '__main__':
     fontsize = 40
     num_comment = 3
+    tflag = True
     ww = windll.user32.GetSystemMetrics(0)
     wh = windll.user32.GetSystemMetrics(1)
     root = tkinter.Tk()
