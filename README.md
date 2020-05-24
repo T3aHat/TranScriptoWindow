@@ -1,4 +1,4 @@
-# TranScripoWindow  
+# TranScriptoWindow  
 [公式ガイド](https://github.com/GoogleCloudPlatform/python-docs-samples/blob/master/speech/microphone/transcribe_streaming_mic.py)の例をベースにしています.  
   
 # 機能紹介  
