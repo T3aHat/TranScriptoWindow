@@ -18,6 +18,3 @@ tkinterの`-transparentcolor`がかなり環境依存なため,windows環境以�
 `$python transcriptowindow.py`を実行し,`start`ボタンを押してPCに向かって話しかけるのみです.  
 環境構築方法は別記事にします.  
   
-# 問題点  
-Frameを閉じてもマイクのstreamingが終わりません.  
-これは`threading`による影響だと考えていますが,まだ未解決ですので,コンソールを閉じて強制終了してください...  
