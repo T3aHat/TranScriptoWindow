@@ -28,6 +28,8 @@ tkinterの`-transparentcolor`がかなり環境依存なため,windows環境以�
 
 # 使用方法  
 `$python transcriptowindow.py`を実行し,`start`ボタンを押してPCに向かって話しかけるのみです.  
-環境構築方法は別記事にします.  
+環境構築方法は[コチラ](https://qiita.com/teahat/items/86b68e03056e914c80f8)
 
-  
+# 関連記事  
+書いてみました.  
+[リアルタイムに音声認識して字幕をオーバーレイしてみた【Python】](https://qiita.com/teahat/items/86b68e03056e914c80f8)
