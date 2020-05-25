@@ -30,7 +30,6 @@ from google.cloud.speech_v1 import enums
 from google.cloud.speech_v1 import types
 import pyaudio
 from six.moves import queue
-from ctypes import windll
 from tkinter import ttk, messagebox
 import tkinter
 import threading
@@ -86,7 +85,7 @@ class MicrophoneStream(object):
 
     def generator(self):
         global tflag
-        while not self.closed and tflag == True:
+        while not self.closed and tflag:
             # Use a blocking get() to ensure there's at least one chunk of
             # data, and stop iteration if the chunk is None, indicating the
             # end of the audio stream.
@@ -108,65 +107,39 @@ class MicrophoneStream(object):
             yield b''.join(data)
 
 
-def listen_print_loop(responses):
-    num_chars_printed = 0
-    for response in responses:
-        if not response.results:
-            continue
-
-        # The `results` list is consecutive. For streaming, we only care about
-        # the first result being considered, since once it's `is_final`, it
-        # moves on to considering the next utterance.
-        result = response.results[0]
-        if not result.alternatives:
-            continue
-
-        # Display the transcription of the top alternative.
-        transcript = result.alternatives[0].transcript
-
-        # Display interim results, but with a carriage return at the end of the
-        # line, so subsequent lines will overwrite them.
-        #
-        # If the previous result was longer than this one, we need to print
-        # some extra spaces to overwrite the previous result
-        overwrite_chars = ' ' * (num_chars_printed - len(transcript))
-
-        if not result.is_final:
-            sys.stdout.write(transcript + overwrite_chars + '\r')
-            sys.stdout.flush()
-
-            num_chars_printed = len(transcript)
-
-        else:
-            print(transcript + overwrite_chars)
-
-            # Exit recognition if any of the transcribed phrases could be
-            # one of our keywords.
-            if re.search(r'\b(exit|quit)\b', transcript, re.I):
-                print('Exiting..')
-                break
-
-            num_chars_printed = 0
-
-
 def btn_clicked():
-    btn.place_forget()
-    root.wm_attributes("-transparentcolor", "grey")
+
+    # subf.destroy()
+    root.wm_attributes("-topmost", True)
+    root.wm_attributes("-transparentcolor", "snow")
     root.attributes("-fullscreen", True)
     t1 = threading.Thread(target=work1)
+    t1.setDaemon(True)
     t1.start()
 
-    def on_closing():
-        global tflag
-        tflag = False
-        if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            root.destroy()
 
-    root.protocol("WM_DELETE_WINDOW", on_closing)
+def on_closing():
+    global tflag
+    try:
+        subf.wm_attributes("-topmost", False)
+    except:
+        pass
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        tflag = False
+        root.quit()
+        try:
+            subf.destroy()
+        except:
+            pass
+    else:
+        try:
+            subf.wm_attributes("-topmost", True)
+        except:
+            pass
 
 
 def work1():
-    global var
+    global var, tflag
     var.set("ここに音声認識結果が表示されます")
     language_code = 'ja-JP'  # a BCP-47 language tag
     client = speech.SpeechClient()
@@ -197,7 +170,6 @@ def work1():
 
             # Display the transcription of the top alternative.
             transcript = result.alternatives[0].transcript
-
             if not result.is_final:
                 txtlist = textwrap.wrap(transcript, int(ww/w))
                 print(txtlist)
@@ -215,32 +187,97 @@ def work1():
                 # Exit recognition if any of the transcribed phrases could be
                 # one of our keywords.
                 if re.search(r'\b(exit|quit)\b', transcript, re.I):
-                    print('Exiting..')
-                    break
+                    on_closing()
 
 
 if __name__ == '__main__':
-    fontsize = 40
+    fontsize = 30
+    fontcolour = "red"
     num_comment = 3
+    alpha = 50
     tflag = True
-    ww = windll.user32.GetSystemMetrics(0)
-    wh = windll.user32.GetSystemMetrics(1)
+    bold = "bold"
     root = tkinter.Tk()
-    root.wm_attributes("-topmost", True)
-    ttk.Style().configure("TP.TFrame", background="grey")
-    root.title("TranscripToWindow")
+    ww = root.winfo_screenwidth()
+    wh = root.winfo_screenheight()
+
+    #root.wm_attributes("-topmost", True)
+    ttk.Style().configure("TP.TFrame", background="snow")
+    root.title("TranScriptoWindow")
+    root.protocol("WM_DELETE_WINDOW", on_closing)
     f = ttk.Frame(master=root, style="TP.TFrame", width=ww, height=wh)
     f.pack()
     var = tkinter.StringVar()
-    var.set("日本語")
+    tmp = "日本語"
+    var.set(tmp)
     label = ttk.Label(root, textvariable=var,
-                      wraplength=ww, font=("メイリオ", fontsize), foreground="red", background="grey")
-    w = label.winfo_reqwidth()/3
+                      wraplength=ww, font=("メイリオ", fontsize, bold), foreground=fontcolour, background="snow")
+    w = label.winfo_reqwidth()/len(tmp)
     h = label.winfo_reqheight()
-    print(w)
-    print(h)
-    label.place(x=0, y=(wh-num_comment*h-50))  # -αは下のタスクバーの分
-    btn = ttk.Button(root, text="start", command=btn_clicked)
-    btn.place(x=ww/2, y=wh/2)
+    label.place(x=0, y=(wh-num_comment*h-alpha))  # -αは下のタスクバーの分
+
+    subf = tkinter.Tk()
+    subf.protocol("WM_DELETE_WINDOW", on_closing)
+    subf.wm_attributes("-topmost", True)
+    subf.geometry("300x300+"+str(int(ww/2-300/2))+"+"+str(int(wh/2-300/2)))
+    subf.title("Settings")
+
+    lnumcomment = ttk.Label(subf, text="Number of comments",
+                            wraplength=ww)
+    lnumcomment.pack()
+    txt1 = tkinter.Entry(subf, width=20)
+    txt1.insert(tkinter.END, num_comment)
+    txt1.pack()
+
+    lfontsize = ttk.Label(subf, text="Fontsize",
+                          wraplength=ww)
+    lfontsize.pack()
+    txt2 = tkinter.Entry(subf, width=20)
+    txt2.insert(tkinter.END, fontsize)
+    txt2.pack()
+
+    lfontcolour = ttk.Label(subf, text="Font colour",
+                            wraplength=ww)
+    lfontcolour.pack()
+    txt3 = tkinter.Entry(subf, width=20)
+    txt3.insert(tkinter.END, fontcolour)
+    txt3.pack()
+
+    lalpha = ttk.Label(subf, text="y-axis correction(If positive,display above)",
+                       wraplength=ww)
+    lalpha.pack()
+    txt4 = tkinter.Entry(subf, width=20)
+    txt4.insert(tkinter.END, alpha)
+    txt4.pack()
+
+    bl1 = tkinter.BooleanVar(subf)
+    bl1.set(True)
+    CheckBox1 = tkinter.Checkbutton(
+        subf, text="Bold", variable=bl1)
+    CheckBox1.pack()
+
+    def apply():
+        global label, w, h, num_comment, alpha
+        label.place_forget()
+        num_comment = int(txt1.get())
+        fontsize = int(txt2.get())
+        fontcolour = txt3.get()
+        alpha = float(txt4.get())
+        if(bl1.get()):
+            bold = "bold"
+        else:
+            bold = "normal"
+        if(fontcolour == "snow"):
+            fontcolour = "white"
+        label = ttk.Label(root, textvariable=var,
+                          wraplength=ww, font=("メイリオ", fontsize, bold), foreground=fontcolour, background="snow")
+        w = label.winfo_reqwidth()/(len(tmp))
+        h = label.winfo_reqheight()
+        label.place(x=0, y=(wh-num_comment*h-alpha))
+
+    btn = ttk.Button(subf, text="Start", command=btn_clicked)
+    btn.pack(side="right")
+    applybtn = ttk.Button(subf, text="Apply", command=apply)
+    applybtn.pack(side="right")
 
     root.mainloop()
